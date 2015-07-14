@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<title>Wind Map</title>
+
+<style>
+body {
+  font: 14px Verdana;
+  color: rgb(148, 148, 148);
+	background-color: #fff
+}
+
+a {
+	color: #000
+}
+
+.subunit-boundary {
+  fill: none;
+  stroke: #777;
+  stroke-dasharray: 2,2;
+  stroke-linejoin: round;
+}
+
+#header-line {
+	border: 0;
+	height: 1px;
+	color: rgb(148, 148, 148);
+	background-color: #ccc;
+	width: 400px;
+	position: absolute;
+	top: 55px;
+	left: 0px;
+}
+
+#map-data {
+	position: absolute;
+	left: 20px;
+	top: 75px;
+}
+#map-data2 {
+	position: absolute;
+	left: 20px;
+	top: 85px;
+}
+
+#map-heading {
+	position: absolute;
+	left: 20px;
+	top: 10px;
+	z-index: 20;
+}
+
+#title {
+	font-family: Verdana;
+	font-size: 40px;
+	color: #555;
+}
+
+#by {
+	font-family: Verdana;
+	font-size: 10px;
+	color: #555;
+}
+
+path {
+	fill: #CED8B6;
+}
+
+line {
+	stroke: #555;
+	stroke-width: 2px;
+}
+
+stn {
+	stroke: #555;
+	stroke-width: 2px;
+}
+.place {
+  fill: #444;
+}
+
+</style>
+
+<div>
+  <div id="map-heading">
+    <span id="title">Wind map</span>
+    <span id="by"><a href="mailto:mats.melander@gmail.com">Mats Melander</a></span>
+  </div>
+
+  <hr id="header-line"/>
+
+  <div id="map-data">
+    <span>Data from <a href="http://opendata.smhi.se">SMHI</a></span>
+    <span id="update-time"></span>
+  </div>
+</div>
+
+</head>
+
+<body>
+
+<script src="js/d3.min.js"></script>
+<script src="js/topojson.v1.min.js"></script>
+<script src="data/wind.js"></script>
+
+<script>
+
+var map = d3.select("#map-data");
+var width = 960, height = 960;
+var color = d3.scale.category10();
+var projection = d3.geo.albers()
+    .center([14.4, 62.0])
+    .rotate([0, 0])
+    .parallels([50, 60])
+    .scale(1000 * 2.1)
+    .translate([width / 2, height / 2.7]);
+var path = d3.geo.path()
+    .projection(projection);
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+var lines = [];
+var min = 1000, max = 0, speedAvg = 0, dirAvg = 0;
+
+function lineAnimate(selection) {
+  selection
+  .attr({
+    x2: function(d) {return d.x0},
+    y2: function(d) {return d.y0}
+  })
+  .style('opacity', 0)
+  .transition()
+    .ease('linear')
+    .duration(function(d) {return d.duration;})
+    .delay(function(d) {return d.delay;})
+    .attr({
+      x2: function(d) {return d.x1},
+      y2: function(d) {return d.y1}
+    })
+    .style('opacity', 0.8)
+  .transition()
+    .duration(1000)
+    .style('opacity', 0.1)
+  .each('end', function() {d3.select(this).call(lineAnimate)});
+}
+
+function toRad(deg) {return deg * Math.PI / 180;}
+function toDeg(rad) {return rad * 180 / Math.PI;}
+
+function lonLat(lonLat, d, dir) {
+  // Formula from http://www.movable-type.co.uk/scripts/latlong.html
+
+  var R = 6371; // Earth's radius in km
+  var lon1 = toRad(lonLat[0]), lat1 = toRad(lonLat[1]);
+  var lat2 = Math.asin(Math.sin(lat1) * Math.cos(d/R) + Math.cos(lat1) * Math.sin(d/R) * Math.cos(dir));
+  var lon2 = lon1 + Math.atan2(Math.sin(dir) * Math.sin(d/R) * Math.cos(lat1), Math.cos(d/R) - Math.sin(lat1) * Math.sin(lat2));
+  return [toDeg(lon2), toDeg(lat2)];
+}
+
+function init() {
+  var windData = weather.List;
+  for(i = 0; i < windData.length; i++) {
+    var d = windData[i];
+    var speed = d.Speed;
+    var lonLat0 = [d.Lon, d.Lat];
+
+    // Scale line length proportionally to speed
+    var lonLat1 = lonLat(lonLat0, 20 * speed, toRad(d.Dir));
+
+    var x0y0 = projection(lonLat0);
+    var x1y1 = projection(lonLat1);
+    var line = {
+      x0: x0y0[0],
+      y0: x0y0[1],
+      x1: x1y1[0],
+      y1: x1y1[1],
+      s: speed,
+      duration: 8000 / speed,     /* pre-compute duration */
+      delay: Math.random() * 1000 /* pre-compute delay */
+    };
+    lines.push(line);
+
+    // console.log(line);
+    if (speed < min) min = speed;
+    if (speed > max) max = speed;
+    speedAvg += speed;
+    dirAvg += d.Dir;
+  }
+  speedAvg /= i;
+  dirAvg /= i;
+}
+
+d3.json("data/swe.json", function(error, swe) {
+  svg.selectAll(".subunit")
+       .data(topojson.feature(swe, swe.objects.subunits).features)
+     .enter().append("path")
+       .attr("class", "subunit")
+       .attr("d", path)
+
+  svg.append("path")
+     .datum(topojson.feature(swe, swe.objects.places))
+     .attr("d", path)
+     .attr("class", "place");
+
+  svg.append("path")
+    .datum(topojson.mesh(swe, swe.objects.subunits, function(a, b) { return a !== b; }))
+    .attr("d", path)
+    .attr("class", "subunit-boundary");
+
+  svg.selectAll("line")
+    .data(lines)
+    .enter()
+    .append("line")
+    .attr({
+      x1: function(d) {return d.x0},
+      y1: function(d) {return d.y0}
+    })
+    .call(lineAnimate);
+});
+
+init();
+
+map.append("div")
+  .html("Latest day - Generated " + weather.Date);
+map.append("div")
+  .html("Speed - Min: " + Math.round(min) + " Max: " + Math.round(max) + " Avg: " + Math.round(speedAvg) + ", Dir - Avg: " + Math.round(dirAvg) + " dgr");
+</script>
+
+<div id="map-data2">
+<br><br><br><br>
+<span>
+    This page is created using <a href="http://d3js.org">D3</a> <br>
+    It is modelled from Peter Cook's UK <a href="http://prcweb.co.uk/lab/ukwind/"> Wind Map</a> and from <a href="http://hint.fm/wind/">Wind</a>
+</span>
+</div>
+
+</body>
+</html>
