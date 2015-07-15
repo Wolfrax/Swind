@@ -95,16 +95,34 @@ def store(l):
     :return: NA
     """
 
-    import os, sys
-    os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
+    import os, sys, time
+    from subprocess import call
 
-    name = "../data/" + l["Date"] + ".js"
+    os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
+    path = "../data/"
+    old = path + "old/"
+    name = path + l["Date"] + ".js"
     with open(name, 'w') as outfile:
         outfile.write("var weather = ")
         json.dump(l, outfile)
         outfile.write(";")
         outfile.close()
-        shutil.copy(name, "../data/wind.js")
+        shutil.copy(name, path + "wind.js")
+
+    # Move all files older than 7 days to old-folder
+    now = time.time()
+    cutoff = now - (7 * 86400)
+
+    if not os.path.exists(old):
+        os.makedirs(old) # Create old-folder if it doesn't exist
+
+    files = os.listdir(path)
+    for f in files:
+        if os.path.isfile(path + f):
+            t = os.stat(path + f)
+            c = t.st_ctime
+            if c < cutoff and f != "swe.json" and f != "wind.js":
+                os.rename(path + f, old + f)
 
 if __name__ == "__main__":
    print "Wind speeds"
