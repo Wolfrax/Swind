@@ -22,6 +22,8 @@ through the variable `weather`.
 
 The JSON files are stored in the `data` directory, parallel to the `py` directory.
 
+**Note** codes are hardcoded and there is no error checking in the script. Not my proudest script obviously...
+
 ### Specifics
 In my case, the Python script is executed once per day on my Raspberry Pi. I have added the following line in `etc/crontab`
     
