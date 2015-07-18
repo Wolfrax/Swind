@@ -46,7 +46,7 @@ Refer to these GitHub pages:
 
 1. [Generating SSH keys] (https://help.github.com/articles/generating-ssh-keys/)
 2. [Changing a remote URL] (https://help.github.com/articles/changing-a-remote-s-url/)
-
+ 
 The output is logged to `/var/log/Swind.log` and a symlink is available at `/var/www/Swind.log`
 
 Through the script `getSMHI.py` is invoked once per day and a new file (such as `2015-07-16.js`) is created in
