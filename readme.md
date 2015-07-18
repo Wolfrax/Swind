@@ -27,14 +27,18 @@ The JSON files are stored in the `data` directory, parallel to the `py` director
 ### Specifics
 In my case, the Python script is executed once per day on my Raspberry Pi. I have added the following line in `etc/crontab`
     
-    00 10 * * * root python /var/www/py/getSMHI.py
+    00 8 * * * root python /var/www/py/getSMHI.py
 
 Remember `sudo chmod g+x -R getSMHI.py`
+I changed the ownership of the /var/www/ directory from root to Pi through `sudo chown -R pi /var/www/`.
 
-I changed the ownership of the /var/www/ directory from root to Pi 
-through `sudo chown -R pi /var/www/`.
-I found out that the system time (use `date` at the Raspberry command prompt) was configured to the wrong timezone, thus 
-I issued the following command `sudo dpkg-reconfigure tzdata`.
+If the system time (use `date` at the Raspberry command prompt) is configured to the wrong timezone, us the following 
+command `sudo dpkg-reconfigure tzdata` to correct.
+
+To enable git push to GitHub repository, SSH needs to be configured, refer to these GitHub pages:
+
+1. [Generating SSH keys] (https://help.github.com/articles/generating-ssh-keys/)
+2. [Changing a remote URL] (https://help.github.com/articles/changing-a-remote-s-url/)
 
 ## SVG map of Sweden
 This was easily done by following [Let's make a map] (http://bost.ocks.org/mike/map/) by Mike Bostock, the person behind D3.
