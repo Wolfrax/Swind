@@ -120,7 +120,7 @@ def store(l):
     for f in files:
         if os.path.isfile(path + f):
             t = os.stat(path + f)
-            c = t.st_mtime
+            c = t.st_mtime # Modification time
             if c < cutoff and f != "swe.json" and f != "wind.js":
                 os.rename(path + f, old + f)
 
