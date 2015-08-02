@@ -10,11 +10,11 @@ git add ./data
 git commit -q -m 'Latest day'
 git push -q origin master
 echo Update Wolfrax web
-rm -f /var/www/Wolfrax/Swind/data/*.js
-cp -p ./data/*.js /var/www/Wolfrax/Swind/data
 cd /var/www/Wolfrax
 git pull
-git add ./Swind/data
+rm -f /var/www/Wolfrax/Swind/data/*.js
+cp -p /var/www/Swind/data/*.js /var/www/Wolfrax/Swind/data
+git add Swind/data/
 git commit -q -m 'Latest day'
 git push -q origin master
 echo =====================
