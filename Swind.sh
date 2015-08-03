@@ -6,13 +6,14 @@ echo Update Swind
 cd /var/www/Swind
 python /var/www/Swind/py/getSMHI.py
 git pull
-git add ./data
+git add data            # Add all new files in data-folder
+git rm -f data/OLD_*.js # Remove all files marked with "OLD_"-prefix by getSMHI.py
 git commit -q -m 'Latest day'
 git push -q origin master
 echo Update Wolfrax web
 cd /var/www/Wolfrax
 git pull
-rm -f /var/www/Wolfrax/Swind/data/*.js
+git rm -f /var/www/Wolfrax/Swind/data/*.js
 cp -p /var/www/Swind/data/*.js /var/www/Wolfrax/Swind/data
 git add Swind/data/
 git commit -q -m 'Latest day'
