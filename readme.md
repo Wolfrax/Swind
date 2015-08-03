@@ -20,7 +20,7 @@ the date of execution of the script
 The file is then copied to `wind.js`, so this file always contain the latest data. The data in this file is accessible
 through the variable `weather`.
 
-The JSON files are stored in the `data` directory, parallel to the `py` directory.
+The JSON files are stored in the `data` directory, parallel to the `py` directory. Files older than 7 days are removed.
 
 **Note** codes are hardcoded and there is no error checking in the script. Not my proudest script obviously...
 

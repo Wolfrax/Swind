@@ -100,7 +100,6 @@ def store(l):
 
     os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
     path = "../data/"
-    old = path + "old/"
     name = path + l["Date"] + ".js"
     with open(name, 'w') as outfile:
         outfile.write("var weather = ")

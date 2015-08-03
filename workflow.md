@@ -51,10 +51,10 @@ The output is logged to `/var/log/Swind.log` and a symlink is available at `/var
 
 Through the script `getSMHI.py` is invoked once per day and a new file (such as `2015-07-16.js`) is created in
 `/var/www/Swind/data`. This file is then copied to `/var/www/Swind/Swind.js` which always contain the latest data.
-Files older than 7 days are copied to `/var/www/Swind/data/old` which is not included in the Git repository.
+Files older than 7 days are prefixed with "OLD_" in the filename, then (git) removed by ´Swind.sh´
 
 Once the script have executed a `git pull` command is issued, this will update the repository from GitHub if needed.
-Then `git add ./data` is executed to add the newly generated files, following this `git commit -q -m 'Latest day'` and
+Then `git add data` is executed to add the newly generated files, following this `git commit -q -m 'Latest day'` and
 `git push -q origin master`. This will push the latest generated files to the GitHub repository Swind.
 
 ## Markdown
