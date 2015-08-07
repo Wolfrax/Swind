@@ -112,9 +112,6 @@ def store(l):
     now = time.time()
     cutoff = now - (7 * 86400)
 
-    if not os.path.exists(old):
-        os.makedirs(old) # Create old-folder if it doesn't exist
-
     files = os.listdir(path)
     for f in files:
         if os.path.isfile(path + f):
