@@ -108,7 +108,7 @@ def store(l):
         outfile.close()
         shutil.copy(name, path + "wind.js")
 
-    # Move all files older than 7 days to old-folder
+    # Remove all files older than 7 days
     now = time.time()
     cutoff = now - (7 * 86400)
 
@@ -118,7 +118,7 @@ def store(l):
             t = os.stat(path + f)
             c = t.st_mtime # Modification time
             if c < cutoff and f != "swe.json" and f != "wind.js":
-                os.rename(path + f, path + "OLD_" + f) # Rename files tobe removed by git with "OLD_"-prefix, this is managed in Swind.sh script
+                os.rename(path + f, path + "OLD_" + f) # Rename files to be removed by git with "OLD_"-prefix, this is managed in Swind.sh script
 
 if __name__ == "__main__":
    print "Wind speeds"
