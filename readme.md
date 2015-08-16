@@ -1,6 +1,6 @@
 # Wind map for Sweden
 
-[Based on open data by SMHI.] (http://opendata.smhi.se/)
+[Based on open data by SMHI.] (http://opendata.smhi.se/) 
 
 [My website for rendering Swind] (http://www.viltstigen.se/Swind/index.html)
 
@@ -10,7 +10,7 @@ It is modelled after from Peter Cook's [UK Wind Map] (http://prcweb.co.uk/lab/uk
 In short, there is a python script `(getSMHI.py) that traverse the SMHI REST API and download wind speeds and directions from 'SMHI latest day' data.
 This data is rendered through D3 on a SVG map of Sweden. Min, max and average wind speed is calculated as well as average wind direction (in degrees).
 
-More details follows.
+Details as follows.
 
 ## Python
 The Pythons script `getSMHI.py` is located in the directory `py` and is using the documentation available on this 
