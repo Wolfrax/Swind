@@ -1,6 +1,7 @@
 # Wind map for Sweden
 
 [Based on open data by SMHI.] (http://opendata.smhi.se/)
+[My website for SWind] (http://www.viltstigen.se/Swind/index.html)
 
 This wind map for Sweden is an exercise using [D3] (http://d3js.org) and [REST] (https://en.wikipedia.org/wiki/Representational_state_transfer).
 It is modelled after from Peter Cook's [UK Wind Map] (http://prcweb.co.uk/lab/ukwind/) and loosely inspired from [Wind] (http://hint.fm/wind/).
