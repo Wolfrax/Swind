@@ -80,7 +80,7 @@ def get_data(par):
 
 def merge_lists(l1, l2):
     for i in range(len(l1["List"])):
-        if l1["List"][i]["Lat"] == l2["List"][i]["Lat"] and l1["List"][i]["Lon"] == l2["List"][i]["Lon"]:
+        if l1["List"][i]["Station"] in l2["List"]:
             l1["List"][i]["Dir"] = l2["List"][i]["Dir"]
         else:
             l1["List"][i]["Dir"] = 0
