@@ -78,10 +78,18 @@ def get_data(par):
     return Wind
 
 
+def find_station(name, lst):
+    for ind, elem in enumerate(lst):
+        if elem["Station"] == name:
+            return ind
+    return None
+
+
 def merge_lists(l1, l2):
     for i in range(len(l1["List"])):
-        if l1["List"][i]["Station"] in l2["List"]:
-            l1["List"][i]["Dir"] = l2["List"][i]["Dir"]
+        ind = find_station(l1["List"][i]["Station"], l2["List"])
+        if ind is not None:
+            l1["List"][i]["Dir"] = l2["List"][ind]["Dir"]
         else:
             l1["List"][i]["Dir"] = 0
     return l1
