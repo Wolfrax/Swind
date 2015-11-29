@@ -26,14 +26,13 @@ When files are changed they can be pushed to GitHub through `VCS->Git->Push...`
 ## Raspberry Pi (192.168.1.50)
 Used as a local data collection server and web-server.
 
-`Swind` (data collection) and `Wolfrax` (web-server) is located at `/var/www`, accessible as
-[http://192.168.1.50/Swind/](http://192.168.1.50/Swind/) and 
-[http://192.168.1.50/Wolfrax](http://192.168.1.50/Wolfrax) respectively.
+`Swind` (data collection) and Webserver accessible as
+[http://192.168.1.50/Swind/](http://192.168.1.50/Swind/)
 
-`getSMHI.py` is located at `/var/www/Swind/py/` and is used through the script `Swind.sh` located at `/var/www/Swind/`
+`getSMHI.py` is used through the script `Swind.sh`
 `Swind.sh` is executed daily through `crontab`
 
-       00 8    * * *   pi      sh /var/www/Swind/Swind.sh >> /var/log/Swind.log 2>&1
+       00 7    * * *   pi      sh /home/pi/app/Swind/Swind.sh >> /var/log/Swind.log 2>&1
 
 Remember `sudo chmod g+x -R getSMHI.py`
 I changed the ownership of the /var/www/ directory from root to Pi through `sudo chown -R pi /var/www/`.

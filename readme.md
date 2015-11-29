@@ -29,7 +29,7 @@ The JSON files are stored in the `data` directory, parallel to the `py` director
 ### Specifics
 In my case, the Python script is executed once per day on my Raspberry Pi. I have added the following line in `etc/crontab`
     
-    00 8 * * * root python /var/www/py/getSMHI.py
+    00 7 * * * root python /home/pi/app/Swind/py/getSMHI.py
 
 Remember `sudo chmod g+x -R getSMHI.py`
 I changed the ownership of the /var/www/ directory from root to Pi through `sudo chown -R pi /var/www/`.
