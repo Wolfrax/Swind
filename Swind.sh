@@ -4,6 +4,7 @@ echo ---------------------
 date
 echo Update Swind
 git pull
+cd /home/pi/app/Swind
 python py/getSMHI.py
 git add data            # Add all new files in data-folder
 git rm -f data/OLD_*.js # Remove all files marked with "OLD_"-prefix by getSMHI.py
