@@ -2,9 +2,9 @@
 # See https://help.github.com/articles/generating-ssh-keys/ to enable SSH to GitHub, needed for script
 echo ---------------------
 date
+cd /home/pi/app/Swind
 echo Update Swind
 git pull
-cd /home/pi/app/Swind
 python py/getSMHI.py
 git add data            # Add all new files in data-folder
 git rm -f data/OLD_*.js # Remove all files marked with "OLD_"-prefix by getSMHI.py
