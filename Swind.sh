@@ -2,6 +2,7 @@
 # See https://help.github.com/articles/generating-ssh-keys/ to enable SSH to GitHub, needed for script
 echo ---------------------
 date
+cd /home/pi/app/Swind
 echo Update Swind
 git pull
 python py/getSMHI.py
