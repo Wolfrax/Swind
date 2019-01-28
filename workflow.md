@@ -30,11 +30,12 @@ Used as a local data collection server and web-server.
 [http://192.168.1.50/Swind/](http://192.168.1.50/Swind/)
 
 `getSMHI.py` is used through the script `Swind.sh`
-`Swind.sh` is executed daily through `crontab`
+`Swind.sh` is executed daily through `crontab`, daily at 1:00 am, output and errors logged to Swind.log.
 
-       00 7    * * *   pi      sh /home/pi/app/Swind/Swind.sh >> /var/log/Swind.log 2>&1
+       00 1    * * *   pi      sh /home/pi/app/Swind/Swind.sh >> /var/log/Swind.log 2>&1
 
-Remember `sudo chmod g+x -R getSMHI.py`
+Remember `$ sudo chmod g+x -R getSMHI.py` and `$ sudo chmod a+w /var/log/Swind.log`
+
 I changed the ownership of the /var/www/ directory from root to Pi through `sudo chown -R pi /var/www/`.
 
 If the system time (use `date` at the Raspberry command prompt) is configured to the wrong timezone, us the following 
