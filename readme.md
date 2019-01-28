@@ -71,54 +71,23 @@ to have one color instead.
 
 ## Animation of Wind speed and direction
 `ìndex.html` includes all logic to generate the wind map. 
-Specifically it includes a D3 project of Sweden
+Specifically it includes a D3 mercator project of Sweden
 
-    var projection = d3.geo.albers()
-        .center([14.4, 62.0])
-        .rotate([0, 0])
-        .parallels([50, 60])
-        .scale(1000 * 2.1)
-        .translate([width / 2, height / 2.7]);
+    var projection = d3.geo.mercator()
+        .center([14.6, 62.1])  // Somewhere in the middle of Sweden, https://sv.wikipedia.org/wiki/Sveriges_geografiska_mittpunkt
+        .scale(1000)
+        .translate([width / 2, height / 2]);
     var path = d3.geo.path()
         .projection(projection);
 
-The function `init` takes the wind speed and wind direction data and scales a line proportionally. It includes other
-information, such as delay and duration for animation. The lines are projected for the map and stored in the array 
-`lines`.
+The function `wind_vector` takes the current wind speed and wind direction data and scales a line proportionally. 
+It includes other information, such as delay and duration for animation. 
+The lines are projected for the map and stored in the array `vectors`.
 
-Finally the D3 library is used to render the wind map
-
-    svg.selectAll(".subunit")
-         .data(topojson.feature(swe, swe.objects.subunits).features)
-       .enter().append("path")
-         .attr("class", "subunit")
-         .attr("d", path)
-
-Below shows the major cities in Sweden as dots on the map without labels
-
-    svg.append("path")
-       .datum(topojson.feature(swe, swe.objects.places))
-       .attr("d", path)
-       .attr("class", "place");
-
-Shows the county borders
-
-    svg.append("path")
-      .datum(topojson.mesh(swe, swe.objects.subunits, function(a, b) { return a !== b; }))
-      .attr("d", path)
-      .attr("class", "subunit-boundary");
-
-Finally render the lines
-
-    svg.selectAll("line")
-      .data(lines)
-      .enter()
-      .append("line")
-      .attr({
-        x1: function(d) {return d.x0},
-        y1: function(d) {return d.y0}
-      })
-      .call(lineAnimate);
+Finally the D3 library is used to render the wind map, refer to the javascript (commented) in `index.html` for details.
+In the process the `swe.json` file is read, the map of Sweden is rendered and then the wind vectors is animated.
+The average wind speed and direction is drawn in a circle, scaled by the wind max speed.
+Some text are rendered.
 
 ## Links
 
