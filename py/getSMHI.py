@@ -12,6 +12,7 @@ __author__ = 'mm'
 #
 # elem = {
 #  Speed: 10.0
+#  Temp: 1.9
 #  Dir: 180
 #  Station: "Arlanda"
 #  Lat: 62.1
@@ -69,6 +70,8 @@ def get_data(par):
                 print "%d\r" % n,
                 if par == "4":
                     elem["Speed"] = float(lnk["value"][0]["value"])
+                elif par == "1":
+                    elem["Temp"] = float(lnk["value"][0]["value"])
                 else:
                     elem["Dir"] = int(lnk["value"][0]["value"])
                 elem["Lon"] = stn["longitude"]
@@ -85,13 +88,13 @@ def find_station(name, lst):
     return None
 
 
-def merge_lists(l1, l2):
+def merge_lists(l1, l2, par):
     for i in range(len(l1["List"])):
         ind = find_station(l1["List"][i]["Station"], l2["List"])
         if ind is not None:
-            l1["List"][i]["Dir"] = l2["List"][ind]["Dir"]
+            l1["List"][i][par] = l2["List"][ind][par]
         else:
-            l1["List"][i]["Dir"] = 0
+            l1["List"][i][par] = 0
     return l1
 
 
@@ -129,10 +132,15 @@ def store(l):
             if c < cutoff and f != "swe.json" and f != "wind.js":
                 # Rename files to be removed by git with "OLD_"-prefix, this is managed in Swind.sh script
                 os.rename(path + f, path + "OLD_" + f)
+
+
 if __name__ == "__main__":
     print "Wind speeds"
     speeds = get_data("4")
     print "Wind directions"
     dirs = get_data("3")
-    store(merge_lists(speeds, dirs))
+    lst = merge_lists(speeds, dirs, "Dir")
+    print "Temperatures"
+    temps = get_data("1")
+    store(merge_lists(lst, temps, "Temp"))
     print "Done"
