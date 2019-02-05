@@ -21,6 +21,7 @@ __author__ = 'mm'
 # Accessed as Wind["List"][0]["Speed"]
 #
 
+# import requests
 import urllib2
 import json as json
 from datetime import date

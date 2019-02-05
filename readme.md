@@ -4,10 +4,10 @@
 
 [My website for rendering Swind](http://www.viltstigen.se/Swind/index.html)
 
-This wind map for Sweden is an exercise using [D3](http://d3js.org) and [REST] (https://en.wikipedia.org/wiki/Representational_state_transfer).
+This wind map for Sweden is an exercise using [D3](http://d3js.org) and [REST](https://en.wikipedia.org/wiki/Representational_state_transfer).
 It is modelled after from Peter Cook's [UK Wind Map](http://prcweb.co.uk/lab/ukwind/) and loosely inspired from [Wind](http://hint.fm/wind/).
 
-In short, there is a python script `(getSMHI.py) that traverse the SMHI REST API and download wind speeds and directions from 'SMHI latest day' data.
+In short, there is a python script (`getSMHI.py`) that traverse the SMHI REST API and download wind speeds and directions from 'SMHI latest day' data.
 This data is rendered through D3 on a SVG map of Sweden. Min, max and average wind speed is calculated as well as average wind direction (in degrees).
 
 Details as follows.
@@ -55,6 +55,9 @@ to [GeoJSON](http://geojson.org/) format, the output file being `subunits.json` 
     ogr2ogr -f GeoJSON -where "ADM0_A3 = 'SWE'" subunits.json ne_10m_admin_1_states_provinces.shp
     ogr2ogr -f GeoJSON -where "ISO_A2 = 'SE' AND SCALERANK <8" places.json ne_10m_populated_places.shp
 
+Rewrite, not county's...
+    $ topojson -o se.json --properties name=NAME -- subunits.json
+
 This is of course to include Sweden 
 (SWE [ISO 3166-1 alpha-3 3 letter code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) and 
 SE [ISO 3166-1 alpha-2 2 letter code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)) 
@@ -97,4 +100,28 @@ Some nice links
 * [Home page Jason Dvies](https://www.jasondavies.com/)
 * [D3 wiki](https://github.com/mbostock/d3/wiki/Tutorials)
 * [topojson wiki](https://github.com/mbostock/topojson/wiki)
+
+## Creating a virtual environment
+
+Using Python3, pipenv and PyCharm.
+
+On raspberry
+
+    $ pip install --user pipenv
+
+Then update .bashrc with
+
+    export PATH=$PATH:/opt/mongo/bin/:/home/pi/.local/bin
+
+Then do (to take effect of the new PATH)
+
+    $ source .bashrc
+    
+
+For local (Mac) installation in PyCharm, go PyCharm/Preferences... and find Project Interpreter dialog.
+Press preferences icon (small wheel, upper right corner) and use add... In the following dialog use pipenv and follow
+the instructions. Add requests. Now use this environment when running locally, switch to remote environment when running
+on raspberry. See installation details for this environment.
+
+
 
