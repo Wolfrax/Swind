@@ -117,6 +117,25 @@ Then do (to take effect of the new PATH)
 
     $ source .bashrc
     
+Then
+
+    $ cd app/Swind
+    $ $ pipenv --python 3.4.2 install
+    Creating a virtualenv for this project...
+    Pipfile: /home/pi/app/Swind/Pipfile
+    Using /usr/bin/python3.4 (3.4.2) to create virtualenv...
+    ⠴ Creating virtual environment...Using base prefix '/usr'
+    New python executable in /home/pi/.virtualenvs/Swind-jM0khCaQ/bin/python3.4
+    Also creating executable in /home/pi/.virtualenvs/Swind-jM0khCaQ/bin/python
+    Installing setuptools, pip...done.
+    Running virtualenv with interpreter /usr/bin/python3.4   
+    
+We now have a new virtualenv in `/home/pi/.virtualenvs/Swind-jM0khCaQ`
+Now configure PyCharm in Preferences... - Project Interpreter (add... followed by SSH intepreter, select path to 
+`/home/pi/.virtualenvs/Swind-jM0khCaQ/bin/python3.4`, make sure path mapping is set to the right path, if not correct 
+this in Preferences... deployment dialog, should be /home/pi/app/Swind` in this case)``
+Once this is done we can add new packages the normal PyCharm way, in preferences. Make a configuration to be able to 
+do remote debugging.
 
 For local (Mac) installation in PyCharm, go PyCharm/Preferences... and find Project Interpreter dialog.
 Press preferences icon (small wheel, upper right corner) and use add... In the following dialog use pipenv and follow
