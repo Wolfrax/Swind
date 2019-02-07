@@ -120,7 +120,7 @@ Structure
     }
 
     var wind_speed_avg = wind_speed_acc / weather.List.length;
-    var wind_dir_avg = wind_dir_acc / weather.List.length;
+    var wind_dir_avg = wind_dir_acc / wind_speed_acc;
     var temp_avg = temp_acc / weather.List.length;
 
     function wind_animate(line) {
