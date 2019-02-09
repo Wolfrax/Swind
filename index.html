@@ -154,13 +154,13 @@ Structure
 
         var avg_vector = [
             { "x": 0, "y": 0 },
-            { "x": avg_speed * Math.cos(wind_dir_avg), "y": avg_speed * Math.sin(wind_dir_avg) } ];
+            { "x": avg_speed * Math.cos(avg_dir), "y": avg_speed * Math.sin(avg_dir) } ];
         var my_x_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cx - radius, cx + radius]);
         var my_y_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cy - radius, cy + radius]);
         var lineGen = d3.svg.line()  // generic line generator definition
                         .x(function(d) { return my_x_scale(d.x); })
                         .y(function(d) { return my_y_scale(d.y); });
-
+var t = lineGen(avg_vector);
         // Draw a circle scaled by wind_maxspeed, like a unit circle
         svg.append("circle")
             .attr("cx", cx)
@@ -177,13 +177,16 @@ Structure
         
         var x_axis = [ {"x": -max_speed, "y": 0}, {"x": max_speed, "y": 0}];
         var y_axis = [ {"x": 0, "y": -max_speed}, {"x": 0, "y": max_speed}];
-    
+
+t = lineGen(avg_vector);
+
         // Now draw x-axis
         svg.append("svg:path")
            .attr("d", lineGen(x_axis))
            .attr("stroke", "grey")
            .attr("stroke-width", 1)
            .attr("fill", "none");
+t = lineGen(avg_vector);
 
         // The y-axis
         svg.append("svg:path")
@@ -191,6 +194,7 @@ Structure
            .attr("stroke", "grey")
            .attr("stroke-width", 1)
            .attr("fill", "none");
+t = lineGen(avg_vector);
 
         svg.append("svg:path")
            .attr("d", lineGen(avg_vector))
