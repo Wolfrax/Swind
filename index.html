@@ -156,7 +156,7 @@ Structure
             { "x": 0, "y": 0 },
             { "x": avg_speed * Math.cos(avg_dir), "y": avg_speed * Math.sin(avg_dir) } ];
         var my_x_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cx - radius, cx + radius]);
-        var my_y_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cy - radius, cy + radius]);
+        var my_y_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cy + radius, cy - radius]);
         var lineGen = d3.svg.line()  // generic line generator definition
                         .x(function(d) { return my_x_scale(d.x); })
                         .y(function(d) { return my_y_scale(d.y); });
