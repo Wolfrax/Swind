@@ -45,11 +45,12 @@ Structure
     function toRad(deg) { return deg * Math.PI / 180; }
     function toDeg(rad) { return rad * 180 / Math.PI; }
 
-    function lon_lat(coord, speed, dir) {
+    function lon_lat(coord, speed, direction) {
         // Formula from http://www.movable-type.co.uk/scripts/latlong.html
         // Calculate new lon/lat coordinates based on lon/lat coordinates, speed and direction
 
         var R = 6371; // Earth's radius in km
+        var dir = toRad(direction);
         var lon1 = toRad(coord[0]);
         var lat1 = toRad(coord[1]);
         var lat2 = Math.asin(Math.sin(lat1) * Math.cos(speed / R) +
@@ -72,7 +73,7 @@ Structure
 
     function wind_vector(stn) {
         var wind_speed = stn.Speed;
-        var wind_dir = toRad(stn.Dir);
+        var wind_dir = stn.Dir;
         var start_coord = [stn.Lon, stn.Lat];
         var temp = stn.Temp;
 
@@ -115,7 +116,7 @@ Structure
         temp_min = Math.min(temp_min, vector.temp);
         temp_max = Math.max(temp_max, vector.temp);
         wind_speed_acc += vector.speed;
-        wind_dir_acc += (vector.speed * toDeg(vector.dir));  // vector.dir is in radians
+        wind_dir_acc += (vector.speed * vector.dir);
         temp_acc += vector.temp;
     }
 
@@ -148,19 +149,26 @@ Structure
     }
 
     function wind_vector_display(avg_speed, max_speed, avg_dir, avg_temp, temp_col) {
-        var offs = 100;
         var cx = 75, cy = 150;
         var radius = 50;
-
+        // Note that North is 0/360 degrees (0 degrees when no wind speed), meaning that we need to adjust with
+        // 90 degrees in the circle.
+        // When using a unit circle, by convention we have 0/360 degrees to the right hand x-axis,
+        // for wind directions this position is (by convention) 90 degrees (East). Thus, 90 degrees needs to be mapped
+        // to 0 degrees, 180 degrees to 270 degrees etc. This can be done using modulus. However, due to javascript
+        // definition of modulus (which differ from Python) we need to do "((a%b)+b) % b"
+        // (see https://stackoverflow.com/questions/41239190/result-of-17-is-different-in-javascript-1-and-python6/41240306)
+        // instead of simply a%b. To do this we in reality we do as below.
+        var wind_direction = (((90 - avg_dir) % 360) + 360) % 360;
         var avg_vector = [
             { "x": 0, "y": 0 },
-            { "x": avg_speed * Math.cos(avg_dir), "y": avg_speed * Math.sin(avg_dir) } ];
+            { "x": avg_speed * Math.cos(toRad(wind_direction)), "y": avg_speed * Math.sin(toRad(wind_direction)) } ];
         var my_x_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cx - radius, cx + radius]);
         var my_y_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cy + radius, cy - radius]);
         var lineGen = d3.svg.line()  // generic line generator definition
                         .x(function(d) { return my_x_scale(d.x); })
                         .y(function(d) { return my_y_scale(d.y); });
-var t = lineGen(avg_vector);
+
         // Draw a circle scaled by wind_maxspeed, like a unit circle
         svg.append("circle")
             .attr("cx", cx)
@@ -176,9 +184,7 @@ var t = lineGen(avg_vector);
         max_speed *= 1.1;
         
         var x_axis = [ {"x": -max_speed, "y": 0}, {"x": max_speed, "y": 0}];
-        var y_axis = [ {"x": 0, "y": -max_speed}, {"x": 0, "y": max_speed}];
-
-t = lineGen(avg_vector);
+        var y_axis = [ {"x": 0, "y": max_speed}, {"x": 0, "y": -max_speed}];
 
         // Now draw x-axis
         svg.append("svg:path")
@@ -186,7 +192,6 @@ t = lineGen(avg_vector);
            .attr("stroke", "grey")
            .attr("stroke-width", 1)
            .attr("fill", "none");
-t = lineGen(avg_vector);
 
         // The y-axis
         svg.append("svg:path")
@@ -194,7 +199,6 @@ t = lineGen(avg_vector);
            .attr("stroke", "grey")
            .attr("stroke-width", 1)
            .attr("fill", "none");
-t = lineGen(avg_vector);
 
         svg.append("svg:path")
            .attr("d", lineGen(avg_vector))
@@ -217,7 +221,7 @@ t = lineGen(avg_vector);
         
         svg.append("text")
            .attr("x", my_x_scale(0))
-           .attr("y", my_y_scale(-max_speed))
+           .attr("y", my_y_scale(max_speed))
            .attr("style", "font-family: Verdana,serif; font-size: 10px; color: #555;")
            .text("Avg temp " + Math.round(avg_temp) + "°");
     }
