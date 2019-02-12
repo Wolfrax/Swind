@@ -129,7 +129,7 @@ def store(l):
         if os.path.isfile(path + f):
             t = os.stat(path + f)
             c = t.st_mtime  # Modification time
-            if c < cutoff and f != "swe.json" and f != "wind.js":
+            if c < cutoff and f != "se.json" and f != "swe.json" and f != "wind.js":
                 # Rename files to be removed by git with "OLD_"-prefix, this is managed in Swind.sh script
                 os.rename(path + f, path + "OLD_" + f)
 
