@@ -80,16 +80,6 @@ def get_data(par):
                     elem["Temp"] = float(lnk["value"][0]["value"])
                 elif par == "3":
                     elem["Dir"] = int(lnk["value"][0]["value"])
-                elif par == "18":
-                    # Note, type can be str, "Snofall" but normally either int or float, ignore if not
-                    try:
-                        elem["Rain"] = float(lnk["value"][0]["value"])
-                    except ValueError:
-                        elem["Rain"] = 0
-                elif par == "9":
-                    elem["AirP"] = float(lnk["value"][0]["value"])
-                elif par == "28":
-                    elem["Cloud"] = float(lnk["value"][0]["value"])
                 else:
                     print "Wrong par value: %s", par
 
@@ -108,12 +98,9 @@ def find_station(name, lst):
 
 
 def merge_lists(l1, l2, par):
-    # NB We are trying to find a station name from l1 in l2, if not found we set the value to 0 below
-    # E.g. if we from previously have the station "Uppsala" in l1 but not in l2 (l2 could e.g. be the rain-list) we
+    # NB We are trying to find a station name at l1 in l2, if not found we set the value to 0 below
+    # E.g. if we from previously have the station "Uppsala" in l1 but not in l2  we
     # set the the rain-value for Uppsala to zero in the l1-list.
-    # We are not treating however the case if we have a new station in l2 (say "Lund") that does not exist in l1.
-    # We should treat this by creating the "Lund" station in l1 with a true (rain) value but setting all other values
-    # to zero. This is to be done...
 
     for i in range(len(l1["List"])):
         ind = find_station(l1["List"][i]["Station"], l2["List"])
@@ -121,23 +108,6 @@ def merge_lists(l1, l2, par):
             l1["List"][i][par] = l2["List"][ind][par]
         else:
             l1["List"][i][par] = 0
-
-    for i in range(len(l2["List"])):
-        ind = find_station(l2["List"][i]["Station"], l1["List"])
-        if ind is None:
-            # First initialize the elem with all values set to zero
-            elem = {}
-            elem["Station"] = l2["List"][i]["Station"]
-            elem["Speed"] = 0.0
-            elem["Temp"] = 0.0
-            elem["Dir"] = 0
-            elem["Rain"] = 0.0
-            elem["AirP"] = 0.0
-            elem["Cloud"] = 0.0
-            # Then on par set the actual value
-            elem[par] = l2["List"][i][par]
-            # Add new station to the l1-list
-            l1["List"].append(elem)
 
     return l1
 
@@ -198,14 +168,5 @@ if __name__ == "__main__":
     print "Temperatures"
     temps = get_data("1")
     lst = merge_lists(lst, temps, "Temp")
-    print "Rain"
-    rain = get_data("18")
-    lst = merge_lists(lst, rain, "Rain")
-    print "Air Pressure"
-    air_p = get_data("9")
-    lst = merge_lists(lst, air_p, "AirP")
-    print "Clouds"
-    cloud = get_data("28")
-    lst = merge_lists(lst, cloud, "Cloud")
     store(lst)
     print "Done"
