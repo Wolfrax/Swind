@@ -12,6 +12,7 @@ __author__ = 'mm'
 #
 # elem = {
 #  Speed: 10.0
+#  Temp: 1.9
 #  Dir: 180
 #  Station: "Arlanda"
 #  Lat: 62.1
@@ -23,11 +24,12 @@ __author__ = 'mm'
 import urllib2
 import json as json
 from datetime import date
+import datetime
 import shutil
 
 
 def get_data(par):
-    d = date.today()
+    d = date.today() - datetime.timedelta(1)  # Yesterdays date as we are gathering data from yesterday (latest-day)
     Wind = {}
     Wind["Summary"] = "Wind data from SMHI Open data"
     Wind["Date"] = d.isoformat()
@@ -36,13 +38,18 @@ def get_data(par):
     url = "http://opendata-download-metobs.smhi.se/api.json"  # Root for SMHI REST API
     lst = json.loads(urllib2.urlopen(url).read())
 
+    # The "next("... construct is used several times below to keep the code short
+    # It is equivalent to:
+    # for (index, d) in enumerate(lst["version"]):
+    #    if d["key"] == "latest":
+    #        i = index
+
     ind1 = next(index for (index, d) in enumerate(lst["version"]) if d["key"] == "latest")
     ind2 = next(index for (index, d) in enumerate(lst["version"][ind1]["link"]) if d["type"] == "application/json")
     # Use latest version (not recommended by SMHI), read parameter list
     url = lst["version"][ind1]["link"][ind2]["href"]
     lst = json.loads(urllib2.urlopen(url).read())
 
-    # Parameter 4 is wind speed, parameter 3 is wind direction
     wnd_ind = next(index for (index, d) in enumerate(lst["resource"]) if d["key"] == par)
     js_ind = next(index for (index, d) in enumerate(lst["resource"][wnd_ind]["link"]) if d["type"] == "application/json")
     url = lst["resource"][wnd_ind]["link"][js_ind]["href"]
@@ -69,8 +76,13 @@ def get_data(par):
                 print "%d\r" % n,
                 if par == "4":
                     elem["Speed"] = float(lnk["value"][0]["value"])
-                else:
+                elif par == "1":
+                    elem["Temp"] = float(lnk["value"][0]["value"])
+                elif par == "3":
                     elem["Dir"] = int(lnk["value"][0]["value"])
+                else:
+                    print "Wrong par value: %s", par
+
                 elem["Lon"] = stn["longitude"]
                 elem["Lat"] = stn["latitude"]
                 Wind["List"].append(elem)
@@ -85,13 +97,18 @@ def find_station(name, lst):
     return None
 
 
-def merge_lists(l1, l2):
+def merge_lists(l1, l2, par):
+    # NB We are trying to find a station name at l1 in l2, if not found we set the value to 0 below
+    # E.g. if we from previously have the station "Uppsala" in l1 but not in l2  we
+    # set the the rain-value for Uppsala to zero in the l1-list.
+
     for i in range(len(l1["List"])):
         ind = find_station(l1["List"][i]["Station"], l2["List"])
         if ind is not None:
-            l1["List"][i]["Dir"] = l2["List"][ind]["Dir"]
+            l1["List"][i][par] = l2["List"][ind][par]
         else:
-            l1["List"][i]["Dir"] = 0
+            l1["List"][i][par] = 0
+
     return l1
 
 
@@ -126,13 +143,30 @@ def store(l):
         if os.path.isfile(path + f):
             t = os.stat(path + f)
             c = t.st_mtime  # Modification time
-            if c < cutoff and f != "swe.json" and f != "wind.js":
+            if c < cutoff and f != "se.json" and f != "swe.json" and f != "wind.js":
                 # Rename files to be removed by git with "OLD_"-prefix, this is managed in Swind.sh script
                 os.rename(path + f, path + "OLD_" + f)
+
+
+# List of parameters (not extensive) that can be downloaded
+# '1',  air temp, momentary value, 1/hour
+# '2',  average temp for 1 day (24 h), at 00:00
+# '3',  wind direction, average value 10 min, 1/hour
+# '4',  wind speed, average value 10 min, 1/hour
+# '6',  relative moisture, momentary value, 1/hour
+# '8',  snow depth, momentary value, 1/hour
+# '9',  air pressure, at sea level, momentary value, 1/hour
+# '18', rain, 1/day, at 18:00
+# '28', lowest cloud layer, momentary value, 1/hour
+
 if __name__ == "__main__":
     print "Wind speeds"
     speeds = get_data("4")
     print "Wind directions"
     dirs = get_data("3")
-    store(merge_lists(speeds, dirs))
+    lst = merge_lists(speeds, dirs, "Dir")
+    print "Temperatures"
+    temps = get_data("1")
+    lst = merge_lists(lst, temps, "Temp")
+    store(lst)
     print "Done"

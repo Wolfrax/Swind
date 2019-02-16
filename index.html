@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
-          integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <title>Wind Map</title>
 
     <script>
@@ -19,8 +17,8 @@
 </head>
 
 <body>
-<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
 
 <!--
 wind.js defines a global variable "weather" that is used in the computation below
@@ -47,11 +45,12 @@ Structure
     function toRad(deg) { return deg * Math.PI / 180; }
     function toDeg(rad) { return rad * 180 / Math.PI; }
 
-    function lon_lat(coord, speed, dir) {
+    function lon_lat(coord, speed, direction) {
         // Formula from http://www.movable-type.co.uk/scripts/latlong.html
         // Calculate new lon/lat coordinates based on lon/lat coordinates, speed and direction
 
         var R = 6371; // Earth's radius in km
+        var dir = toRad(direction);
         var lon1 = toRad(coord[0]);
         var lat1 = toRad(coord[1]);
         var lat2 = Math.asin(Math.sin(lat1) * Math.cos(speed / R) +
@@ -61,7 +60,7 @@ Structure
         return [toDeg(lon2), toDeg(lat2)];
     }
 
-    var width = 1000, height = 600;
+    var width = 400, height = 600;
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height);
@@ -74,8 +73,9 @@ Structure
 
     function wind_vector(stn) {
         var wind_speed = stn.Speed;
-        var wind_dir = toRad(stn.Dir);
+        var wind_dir = stn.Dir;
         var start_coord = [stn.Lon, stn.Lat];
+        var temp = stn.Temp;
 
         // Using the stations lon/lat coordinates (start_coord) as the starting point for a wind vector
         // we calculate the end coordinates for the wind vector scaling proportionally to speed and direction
@@ -93,6 +93,7 @@ Structure
             y1: x1y1[1],
             speed: wind_speed,
             dir: wind_dir,
+            temp: temp,
             duration: wind_speed ? 8000 / wind_speed : 0,  /* pre-compute duration, used for animation */
             delay: Math.random() * 1000   /* pre-compute delay, used for animation */
         };
@@ -101,7 +102,8 @@ Structure
     // loop through the list of weather station data and transform this into a lsit of wind vectors
     var vectors = [];
     var wind_min = 1000, wind_max = 0;
-    var wind_speed_acc = 0, wind_dir_acc = 0;
+    var temp_min = 100, temp_max = -100;
+    var wind_speed_acc = 0, wind_dir_acc = 0, temp_acc = 0;
 
     for (var i = 0; i < weather.List.length; i++) {
         var vector = wind_vector(weather.List[i]);
@@ -111,12 +113,16 @@ Structure
         // Save some statistics for later display
         wind_min = Math.min(wind_min, vector.speed);
         wind_max = Math.max(wind_max, vector.speed);
+        temp_min = Math.min(temp_min, vector.temp);
+        temp_max = Math.max(temp_max, vector.temp);
         wind_speed_acc += vector.speed;
-        wind_dir_acc += toDeg(vector.dir);  // vector.dir is in radians
+        wind_dir_acc += (vector.speed * vector.dir);
+        temp_acc += vector.temp;
     }
 
     var wind_speed_avg = wind_speed_acc / weather.List.length;
-    var wind_dir_avg = wind_dir_acc / weather.List.length;
+    var wind_dir_avg = wind_dir_acc / wind_speed_acc;
+    var temp_avg = temp_acc / weather.List.length;
 
     function wind_animate(line) {
         // Animation of wind on top of the map,
@@ -142,34 +148,43 @@ Structure
             .each('end', function() { d3.select(this).call(wind_animate) });
     }
 
-    function wind_vector_display(avg_speed, max_speed, avg_dir) {
-        var offs = 100;
-
+    function wind_vector_display(avg_speed, max_speed, avg_dir, avg_temp, temp_col) {
+        var cx = 75, cy = 150;
+        var radius = 50;
+        // Note that North is 0/360 degrees (0 degrees when no wind speed), meaning that we need to adjust with
+        // 90 degrees in the circle.
+        // When using a unit circle, by convention we have 0/360 degrees to the right hand x-axis,
+        // for wind directions this position is (by convention) 90 degrees (East). Thus, 90 degrees needs to be mapped
+        // to 0 degrees, 180 degrees to 270 degrees etc. This can be done using modulus. However, due to javascript
+        // definition of modulus (which differ from Python) we need to do "((a%b)+b) % b"
+        // (see https://stackoverflow.com/questions/41239190/result-of-17-is-different-in-javascript-1-and-python6/41240306)
+        // instead of simply a%b. To do this we in reality we do as below.
+        var wind_direction = (((90 - avg_dir) % 360) + 360) % 360;
         var avg_vector = [
             { "x": 0, "y": 0 },
-            { "x": avg_speed * Math.cos(wind_dir_avg), "y": avg_speed * Math.sin(wind_dir_avg) } ];
-
-        var my_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([offs, 2 * offs]);
+            { "x": avg_speed * Math.cos(toRad(wind_direction)), "y": avg_speed * Math.sin(toRad(wind_direction)) } ];
+        var my_x_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cx - radius, cx + radius]);
+        var my_y_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([cy + radius, cy - radius]);
         var lineGen = d3.svg.line()  // generic line generator definition
-                        .x(function(d) { return my_scale(d.x); })
-                        .y(function(d) { return my_scale(d.y); });
+                        .x(function(d) { return my_x_scale(d.x); })
+                        .y(function(d) { return my_y_scale(d.y); });
 
         // Draw a circle scaled by wind_maxspeed, like a unit circle
         svg.append("circle")
-            .attr("cx", my_scale(0))
-            .attr("cy", my_scale(0))
-            .attr("r", (my_scale(max_speed) - offs) / 2)
+            .attr("cx", cx)
+            .attr("cy", cy)
+            .attr("r", radius)
             .attr('stroke','grey')
-            .attr('fill','lightgrey');
+            .attr('fill', temp_col);
 
         // Now draw x- and y-axis across the circle
-        var x_axis = [ {"x": -max_speed, "y": 0}, {"x": max_speed, "y": 0}];
-        var y_axis = [ {"x": 0, "y": -max_speed}, {"x": 0, "y": max_speed}];
 
         // To make the axis come somewhat outside the circle, looks nicer, we rescale max_speed
         // and re-define my_scale using the new max_speed value
-        max_speed *= 0.9;
-        my_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([offs, 2 * offs]);
+        max_speed *= 1.1;
+        
+        var x_axis = [ {"x": -max_speed, "y": 0}, {"x": max_speed, "y": 0}];
+        var y_axis = [ {"x": 0, "y": max_speed}, {"x": 0, "y": -max_speed}];
 
         // Now draw x-axis
         svg.append("svg:path")
@@ -185,10 +200,6 @@ Structure
            .attr("stroke-width", 1)
            .attr("fill", "none");
 
-        // Now we plot the average wind vector using average direction and speed using my_scale
-        max_speed /= 0.9; // Re-re-scale maxspeed, back to original value and re-establish my_scale accordingly
-        my_scale = d3.scale.linear().domain([-max_speed, max_speed]).range([offs, 2 * offs]);
-
         svg.append("svg:path")
            .attr("d", lineGen(avg_vector))
            .attr("stroke", "black")
@@ -197,16 +208,22 @@ Structure
 
         // Decorate with some text
         svg.append("text")
-           .attr("x", my_scale(avg_vector[1].x))
-           .attr("y", my_scale(avg_vector[1].y))
+           .attr("x", my_x_scale(avg_vector[1].x))
+           .attr("y", my_y_scale(avg_vector[1].y))
            .attr("style", "font-family: Verdana,serif; font-size: 10px; color: #555;")
            .text(Math.round(avg_speed) + "m/s " + Math.round(avg_dir) + "°");
 
         svg.append("text")
-           .attr("x", my_scale(max_speed))
-           .attr("y", my_scale(0))
+           .attr("x", my_x_scale(max_speed))
+           .attr("y", my_y_scale(0))
            .attr("style", "font-family: Verdana,serif; font-size: 10px; color: #555;")
-           .text("Max " + Math.round(max_speed) + "m/s ");
+           .text("Max " + Math.round(max_speed) + "m/s");
+        
+        svg.append("text")
+           .attr("x", my_x_scale(0))
+           .attr("y", my_y_scale(max_speed))
+           .attr("style", "font-family: Verdana,serif; font-size: 10px; color: #555;")
+           .text("Avg temp " + Math.round(avg_temp) + "°");
     }
 
     // Below we generate some text, starting at pre-defined y-position and spacing, x-position is implicitly 0
@@ -216,34 +233,148 @@ Structure
         .text("Generated at " + weather.Date);
 
     svg.append("text")
-        .attr("x", width - 300)
-        .attr("y", height - 75)
+        .attr("x", 0)
+        .attr("y", height - 50)
         .attr("style", "font-family: Verdana,serif; font-size: 10px; color: #555;")
         .append("a")
         .text("Mats Melander (c)").attr("href", "mailto:mats.melander@gmail.com").style("text-decoration", "underline");
 
-    d3.json("data/swe.json", function (error, se) {
-        // We read the vector data in topoJSON format, generated from shapefile (see readme)
-
-        svg.selectAll("county")
+    d3.json("data/se.json", function (error, se) {
+        // Below we do several renderings using the mapping of Sweden in GeoJSON format, mapped to topoJSON.
+        //
+        // Add a clipPath for later usage of the voronoi mapping, used for temperatures
+        svg.selectAll("clip")
             .data(topojson.feature(se, se.objects.subunits).features)
             .enter()
-              .append("path")
-              .attr("style", "fill: lightgrey")
-              .attr("d", path);
+                .append("defs")
+                .append("clipPath")
+                .attr("id", "swe-clip")
+                .append("path")
+                .attr("d", path);
 
-        wind_vector_display(wind_speed_avg, wind_max, wind_dir_avg);
+       // We read the vector data in topoJSON format, generated from shapefile (see readme)
+        svg.selectAll("Sweden")
+            .data(topojson.feature(se, se.objects.subunits).features)
+            .enter()
+                .append("path")
+                .attr("style", "fill: none")
+                .attr("d", path);
 
-        svg.selectAll("wind")        // select all "wind" elements within svg
+        // This is the Voronoi mapping, we use the lat/lon positions of each weather station and calculate all the
+        // points that is closest to the lat/lon position, see https://en.wikipedia.org/wiki/Voronoi_diagram.
+        // This is used for temperatures, which is scalar value (as is opposed to wind, which is a vector)
+        var voronoi = d3.geom.voronoi()
+            .x(function (d) { return d.x0; })
+            .y(function (d) { return d.y0 });
+
+        // Color mapping for temperatures, -30 degrees Celsius (I'm civilized...) to +30 degrees Celsius
+        var color_range =  
+            ["#5E4FA2", "#3288BD", "#66C2A5", "#ABDDA4", "#E6F598", "#FFFFBF", "#FEE08B", "#FDAE61", "#F46D43", "#D53E4F", "#9E0142"];
+        //    ["#440154", "#440256", "#450457", "#450559", "#46075a", "#46085c", "#460a5d", "#460b5e", "#470d60", "#470e61", "#471063", "#471164", "#471365", "#481467", "#481668", "#481769", "#48186a", "#481a6c", "#481b6d", "#481c6e", "#481d6f", "#481f70", "#482071", "#482173", "#482374", "#482475", "#482576", "#482677", "#482878", "#482979", "#472a7a", "#472c7a", "#472d7b", "#472e7c", "#472f7d", "#46307e", "#46327e", "#46337f", "#463480", "#453581", "#453781", "#453882", "#443983", "#443a83", "#443b84", "#433d84", "#433e85", "#423f85", "#424086", "#424186", "#414287", "#414487", "#404588", "#404688", "#3f4788", "#3f4889", "#3e4989", "#3e4a89", "#3e4c8a", "#3d4d8a", "#3d4e8a", "#3c4f8a", "#3c508b", "#3b518b", "#3b528b", "#3a538b", "#3a548c", "#39558c", "#39568c", "#38588c", "#38598c", "#375a8c", "#375b8d", "#365c8d", "#365d8d", "#355e8d", "#355f8d", "#34608d", "#34618d", "#33628d", "#33638d", "#32648e", "#32658e", "#31668e", "#31678e", "#31688e", "#30698e", "#306a8e", "#2f6b8e", "#2f6c8e", "#2e6d8e", "#2e6e8e", "#2e6f8e", "#2d708e", "#2d718e", "#2c718e", "#2c728e", "#2c738e", "#2b748e", "#2b758e", "#2a768e", "#2a778e", "#2a788e", "#29798e", "#297a8e", "#297b8e", "#287c8e", "#287d8e", "#277e8e", "#277f8e", "#27808e", "#26818e", "#26828e", "#26828e", "#25838e", "#25848e", "#25858e", "#24868e", "#24878e", "#23888e", "#23898e", "#238a8d", "#228b8d", "#228c8d", "#228d8d", "#218e8d", "#218f8d", "#21908d", "#21918c", "#20928c", "#20928c", "#20938c", "#1f948c", "#1f958b", "#1f968b", "#1f978b", "#1f988b", "#1f998a", "#1f9a8a", "#1e9b8a", "#1e9c89", "#1e9d89", "#1f9e89", "#1f9f88", "#1fa088", "#1fa188", "#1fa187", "#1fa287", "#20a386", "#20a486", "#21a585", "#21a685", "#22a785", "#22a884", "#23a983", "#24aa83", "#25ab82", "#25ac82", "#26ad81", "#27ad81", "#28ae80", "#29af7f", "#2ab07f", "#2cb17e", "#2db27d", "#2eb37c", "#2fb47c", "#31b57b", "#32b67a", "#34b679", "#35b779", "#37b878", "#38b977", "#3aba76", "#3bbb75", "#3dbc74", "#3fbc73", "#40bd72", "#42be71", "#44bf70", "#46c06f", "#48c16e", "#4ac16d", "#4cc26c", "#4ec36b", "#50c46a", "#52c569", "#54c568", "#56c667", "#58c765", "#5ac864", "#5cc863", "#5ec962", "#60ca60", "#63cb5f", "#65cb5e", "#67cc5c", "#69cd5b", "#6ccd5a", "#6ece58", "#70cf57", "#73d056", "#75d054", "#77d153", "#7ad151", "#7cd250", "#7fd34e", "#81d34d", "#84d44b", "#86d549", "#89d548", "#8bd646", "#8ed645", "#90d743", "#93d741", "#95d840", "#98d83e", "#9bd93c", "#9dd93b", "#a0da39", "#a2da37", "#a5db36", "#a8db34", "#aadc32", "#addc30", "#b0dd2f", "#b2dd2d", "#b5de2b", "#b8de29", "#bade28", "#bddf26", "#c0df25", "#c2df23", "#c5e021", "#c8e020", "#cae11f", "#cde11d", "#d0e11c", "#d2e21b", "#d5e21a", "#d8e219", "#dae319", "#dde318", "#dfe318", "#e2e418", "#e5e419", "#e7e419", "#eae51a", "#ece51b", "#efe51c", "#f1e51d", "#f4e61e", "#f6e620", "#f8e621", "#fbe723", "#fde725"];
+        var colors = d3.scale.quantize()
+            .domain([-30, 30])
+//            .range(['#2d004b', '#542788', '#8073ac', '#b2abd2', '#d8daeb', '#f7f7f7', '#fee0b6', '#fdb863', '#e08214', '#b35806', '#7f3b08']);
+//            .range(["#5E4FA2", "#3288BD", "#66C2A5", "#ABDDA4", "#E6F598", "#FFFFBF", "#FEE08B", "#FDAE61", "#F46D43", "#D53E4F", "#9E0142"]);
+            .range(color_range);
+
+
+        // Here is the actual division of Sweden into a Voronoi diagram
+        svg.selectAll("voronoi")
+            .data(voronoi(vectors))
+            .enter()
+                .append("path")
+                .attr("clip-path", "url(#swe-clip)")  // Apply the clipPath, stay within the contours of Sweden
+                .attr("fill", function (d) { return colors(d.point.temp) })
+                .attr("d", function (d) { return "M" + d.join("L") + "Z"; })
+                .attr("style", function(d) { return "stroke: " + colors(d.point.temp) } );  // Get rid of cell borders
+
+        // Make the wind direction and speed visible in a separate circular diagram, fill color is average temp
+        wind_vector_display(wind_speed_avg, wind_max, wind_dir_avg, temp_avg, colors(temp_avg));
+
+        // add the legend now
+        var legendFullHeight = height;
+        var legendFullWidth = 50; 
+
+        var legendMargin = { top: 50, bottom: 50, left: 5, right: 30 };
+        var legendWidth = legendFullWidth - legendMargin.left - legendMargin.right;
+        var legendHeight = legendFullHeight - legendMargin.top - legendMargin.bottom;
+        var legendSvg = d3.select("body").append("svg")
+            .attr('width', legendFullWidth)
+            .attr('height', legendFullHeight)
+            .attr("style", "font-family: Verdana,serif; font-size: 10px; color: #555;")
+            .append('g')
+            .attr('transform', 'translate(' + legendMargin.left + ',' + legendMargin.top + ')');
+
+        // append gradient bar
+        var gradient = legendSvg.append('defs')
+            .append('linearGradient')
+            .attr('id', 'gradient')
+            .attr('x1', '0%') // bottom
+            .attr('y1', '100%')
+            .attr('x2', '0%') // to top
+            .attr('y2', '0%')
+            .attr('spreadMethod', 'pad');
+
+        // programatically generate the gradient for the legend this creates an array of [pct, colour] pairs as stop values for legend
+        var pct = linspace(0, 100, color_range.length).map(function (d) { return Math.round(d) + '%'; });
+
+        legendSvg.append('rect')
+                 .attr('x1', 0)
+                 .attr('y1', 0)
+                 .attr('width', legendWidth)
+                 .attr('height', legendHeight - 50)
+                 .style('fill', 'url(#gradient)');
+
+        // create a scale and axis for the legend
+        var legendScale = d3.scale.linear()
+            .domain([-30, 30])
+            .range([legendHeight - 50, 0]);
+
+        var legendAxis = d3.svg.axis()
+            .scale(legendScale)
+            .orient("right")
+            .tickValues(d3.range(-30, 30))
+            .tickValues([-30, -25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30])
+            .tickFormat(d3.format("d"));
+
+        legendSvg.append("g")
+            .attr("style", "fill: none; stroke: #000; shape-rendering: crispEdges;")
+            .attr("transform", "translate(" + legendWidth + ", 0)")
+            .call(legendAxis);
+
+        var colourPct = d3.zip(pct, color_range);
+
+        colourPct.forEach(function(d) {
+            gradient.append('stop')
+                .attr('offset', d[0])
+                .attr('stop-color', d[1])
+                .attr('stop-opacity', 1);
+        });
+
+        function linspace(start, end, n) {
+            var out = [];
+            var delta = (end - start) / (n - 1);
+
+            var i = 0;
+            while(i < (n - 1)) {
+                out.push(start + (i * delta));
+                i++;
+            }
+
+            out.push(end);
+            return out;
+        }
+
+        // Now show all wind vectors as straight lines onto the Sweden map
+        svg.selectAll("wind")        // select all "wind" e— within svg
             .data(vectors)           // bind the data "vectors" to this selection
             .enter()                 // enter for all non-matching elements to the data
-              .append("line")        // append "line" to selection (svg element with (x1, y1) to (x2, y2) coord)
-              .attr({ x1: function (d) { return d.x0 },
-                      y1: function (d) { return d.y0 } })
-              .attr("style", "stroke: black")
-              .call(wind_animate);
+                .append("line")        // append "line" to selection (svg element with (x1, y1) to (x2, y2) coord)
+                .attr({ x1: function (d) { return d.x0 },
+                        y1: function (d) { return d.y0 } })
+                .attr("style", "stroke: black")
+                .call(wind_animate);
     });
-
 </script>
 </body>
 </html>
