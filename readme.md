@@ -1,3 +1,5 @@
+NOTE, not used by Viltsitgen (rpi1) anymore, kept for reference
+
 # Wind map for Sweden
 
 [Based on open data by SMHI](http://opendata.smhi.se/) 
